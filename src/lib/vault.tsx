@@ -16,6 +16,7 @@ export interface Note {
   createdAt: number;
   updatedAt: number;
   pinned: boolean;
+  deletedAt?: number | null;
 }
 
 export interface Task {
@@ -24,6 +25,8 @@ export interface Task {
   due: string; // YYYY-MM-DD
   done: boolean;
   createdAt: number;
+  completedAt?: number | null;
+  deletedAt?: number | null;
 }
 
 const NOTES_KEY = "mindgarden.notes.v1";
@@ -31,6 +34,25 @@ const TASKS_KEY = "mindgarden.tasks.v1";
 
 export function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+const MONTHS_RU = [
+  "января",
+  "февраля",
+  "марта",
+  "апреля",
+  "мая",
+  "июня",
+  "июля",
+  "августа",
+  "сентября",
+  "октября",
+  "ноября",
+  "декабря",
+];
+
+export function dailyNoteTitle(date = new Date()): string {
+  return `${date.getDate()} ${MONTHS_RU[date.getMonth()]} ${date.getFullYear()}`;
 }
 
 export function toDayKey(ts: number): string {
@@ -155,17 +177,30 @@ function loadTasks(): Task[] {
 }
 
 interface VaultContextValue {
+  /** active (non-deleted) notes */
   notes: Note[];
+  /** active (non-deleted) tasks */
   tasks: Task[];
+  trashedNotes: Note[];
+  trashedTasks: Task[];
   createNote: (title?: string, content?: string) => Note;
   updateNote: (
     id: string,
     patch: Partial<Pick<Note, "title" | "content" | "pinned">>,
   ) => void;
+  /** soft delete -> trash */
   deleteNote: (id: string) => void;
+  restoreNote: (id: string) => void;
+  purgeNote: (id: string) => void;
   addTask: (text: string, due: string) => void;
   toggleTask: (id: string) => void;
+  /** soft delete -> trash */
   deleteTask: (id: string) => void;
+  restoreTask: (id: string) => void;
+  purgeTask: (id: string) => void;
+  emptyTrash: () => void;
+  /** find or create today's daily note */
+  getDailyNote: () => Note;
   importData: (json: string) => boolean;
   exportData: () => string;
   /** note title (lowercased) -> note */
@@ -182,15 +217,32 @@ interface VaultContextValue {
 const VaultContext = createContext<VaultContextValue | null>(null);
 
 export function VaultProvider({ children }: { children: ReactNode }) {
-  const [notes, setNotes] = useState<Note[]>(loadNotes);
-  const [tasks, setTasks] = useState<Task[]>(loadTasks);
+  const [allNotes, setNotes] = useState<Note[]>(loadNotes);
+  const [allTasks, setTasks] = useState<Task[]>(loadTasks);
 
   useEffect(() => {
-    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
-  }, [notes]);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(allNotes));
+  }, [allNotes]);
   useEffect(() => {
-    localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-  }, [tasks]);
+    localStorage.setItem(TASKS_KEY, JSON.stringify(allTasks));
+  }, [allTasks]);
+
+  const notes = useMemo(() => allNotes.filter(n => !n.deletedAt), [allNotes]);
+  const tasks = useMemo(() => allTasks.filter(t => !t.deletedAt), [allTasks]);
+  const trashedNotes = useMemo(
+    () =>
+      allNotes
+        .filter(n => n.deletedAt)
+        .sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
+    [allNotes],
+  );
+  const trashedTasks = useMemo(
+    () =>
+      allTasks
+        .filter(t => t.deletedAt)
+        .sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
+    [allTasks],
+  );
 
   const createNote = useCallback((title?: string, content?: string) => {
     const now = Date.now();
@@ -221,6 +273,18 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteNote = useCallback((id: string) => {
+    setNotes(prev =>
+      prev.map(n => (n.id === id ? { ...n, deletedAt: Date.now() } : n)),
+    );
+  }, []);
+
+  const restoreNote = useCallback((id: string) => {
+    setNotes(prev =>
+      prev.map(n => (n.id === id ? { ...n, deletedAt: null } : n)),
+    );
+  }, []);
+
+  const purgeNote = useCallback((id: string) => {
     setNotes(prev => prev.filter(n => n.id !== id));
   }, []);
 
@@ -233,17 +297,61 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   const toggleTask = useCallback((id: string) => {
     setTasks(prev =>
-      prev.map(t => (t.id === id ? { ...t, done: !t.done } : t)),
+      prev.map(t =>
+        t.id === id
+          ? { ...t, done: !t.done, completedAt: t.done ? null : Date.now() }
+          : t,
+      ),
     );
   }, []);
 
   const deleteTask = useCallback((id: string) => {
+    setTasks(prev =>
+      prev.map(t => (t.id === id ? { ...t, deletedAt: Date.now() } : t)),
+    );
+  }, []);
+
+  const restoreTask = useCallback((id: string) => {
+    setTasks(prev =>
+      prev.map(t => (t.id === id ? { ...t, deletedAt: null } : t)),
+    );
+  }, []);
+
+  const purgeTask = useCallback((id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
   }, []);
 
+  const getDailyNote = useCallback((): Note => {
+    const title = dailyNoteTitle();
+    const existing = allNotes.find(
+      n => !n.deletedAt && n.title.trim().toLowerCase() === title.toLowerCase(),
+    );
+    if (existing) return existing;
+    const now = Date.now();
+    const note: Note = {
+      id: uid(),
+      title,
+      content: `# ${title}\n\n#дневник\n\n## Мысли\n\n- `,
+      createdAt: now,
+      updatedAt: now,
+      pinned: false,
+    };
+    setNotes(prev => [note, ...prev]);
+    return note;
+  }, [allNotes]);
+
+  const emptyTrash = useCallback(() => {
+    setNotes(prev => prev.filter(n => !n.deletedAt));
+    setTasks(prev => prev.filter(t => !t.deletedAt));
+  }, []);
+
   const exportData = useCallback(() => {
-    return JSON.stringify({ version: 1, notes, tasks }, null, 2);
-  }, [notes, tasks]);
+    return JSON.stringify(
+      { version: 1, notes: allNotes, tasks: allTasks },
+      null,
+      2,
+    );
+  }, [allNotes, allTasks]);
 
   const importData = useCallback((json: string) => {
     try {
@@ -295,12 +403,20 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     () => ({
       notes,
       tasks,
+      trashedNotes,
+      trashedTasks,
       createNote,
       updateNote,
       deleteNote,
+      restoreNote,
+      purgeNote,
       addTask,
       toggleTask,
       deleteTask,
+      restoreTask,
+      purgeTask,
+      emptyTrash,
+      getDailyNote,
       importData,
       exportData,
       byTitle,
@@ -312,12 +428,20 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     [
       notes,
       tasks,
+      trashedNotes,
+      trashedTasks,
       createNote,
       updateNote,
       deleteNote,
+      restoreNote,
+      purgeNote,
       addTask,
       toggleTask,
       deleteTask,
+      restoreTask,
+      purgeTask,
+      emptyTrash,
+      getDailyNote,
       importData,
       exportData,
       byTitle,

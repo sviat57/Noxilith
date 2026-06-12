@@ -19,6 +19,7 @@ import {
   type ViktorAuthSession,
 } from "@/lib/viktor-spaces-access/ViktorAuthGlobalGate";
 import { ViktorSpaceAccessProvider } from "@/lib/viktor-spaces-access/ViktorSpaceAccessProvider";
+import { ArchivePage } from "@/pages/vault/ArchivePage";
 import { CalendarPage } from "@/pages/vault/CalendarPage";
 import { GraphPage } from "@/pages/vault/GraphPage";
 import { NotesPage } from "@/pages/vault/NotesPage";
@@ -119,6 +120,7 @@ export function ViktorAuthAppRoutes({
                 <Route path="/graph" element={<GraphPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/timer" element={<TimerPage />} />
+                <Route path="/archive" element={<ArchivePage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

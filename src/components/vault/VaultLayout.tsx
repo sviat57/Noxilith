@@ -1,15 +1,18 @@
 import {
+  Archive,
   CalendarDays,
   Download,
   FileText,
   Moon,
+  NotebookPen,
+  Search,
   Sprout,
   Sun,
   TimerIcon,
   Upload,
   Waypoints,
 } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -18,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CommandPalette } from "@/components/vault/CommandPalette";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatClock, useTimer } from "@/lib/timer";
 import { cn } from "@/lib/utils";
@@ -105,7 +109,8 @@ export function VaultLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme, switchable } = useTheme();
-  const { exportData, importData } = useVault();
+  const { exportData, importData, getDailyNote } = useVault();
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const { running } = useTimer();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -169,6 +174,30 @@ export function VaultLayout() {
           <RibbonButton to="/timer" label="Таймер" active={path === "/timer"}>
             <TimerIcon className={cn("size-5", running && "text-primary")} />
           </RibbonButton>
+          <RibbonButton
+            to="/archive"
+            label="Архив и корзина"
+            active={path === "/archive"}
+          >
+            <Archive className="size-5" />
+          </RibbonButton>
+
+          <div className="my-1 h-px w-7 bg-border/70" />
+          <RibbonAction
+            label="Быстрый переход (Ctrl+K)"
+            onClick={() => setPaletteOpen(true)}
+          >
+            <Search className="size-5" />
+          </RibbonAction>
+          <RibbonAction
+            label="Заметка дня"
+            onClick={() => {
+              const n = getDailyNote();
+              navigate(`/note/${n.id}`);
+            }}
+          >
+            <NotebookPen className="size-5" />
+          </RibbonAction>
 
           <div className="mt-auto flex flex-col items-center gap-1">
             <RibbonAction label="Экспорт данных" onClick={handleExport}>
@@ -207,6 +236,7 @@ export function VaultLayout() {
           <Outlet />
         </main>
         <FloatingTimerPill />
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </div>
     </TooltipProvider>
   );

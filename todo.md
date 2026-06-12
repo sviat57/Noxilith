@@ -13,19 +13,21 @@ Requirements (from Svat, in Russian):
 
 ## Plan
 - [x] init_app_project (mindgarden)
-- [ ] Add deps: marked, dompurify, d3-force
-- [ ] src/lib/vault.tsx — types, localStorage store, React context, seed notes (RU)
-- [ ] src/lib/markdown.ts — wikilink/tag extraction + rendering
-- [ ] Theme: dark Obsidian-like (purple accent) in index.css, APP_NAME
-- [ ] Notes view: list + markdown editor (edit/preview) + right panel (backlinks, meta)
-- [ ] Graph view: force-directed canvas graph, click → open note
-- [ ] Calendar view: month grid, notes by creation date, tasks by due date
-- [ ] Tasks: add/complete/delete, due dates
-- [ ] Timer: pomodoro (focus/break), persistent across views
-- [ ] Extras: search, tags, pin, export/import JSON, stats
-- [ ] App.tsx routes (no convex auth in front; platform viktor_auth protects)
-- [ ] bun run sync:build, fix errors
-- [ ] e2e test (create note, link, backlink, task, calendar, timer)
-- [ ] Screenshots
-- [ ] Deploy preview, Slack message w/ screenshots + URL + prod approval buttons
+- [x] Add deps: marked, dompurify, d3-force
+- [x] src/lib/vault.tsx — types, localStorage store, React context, seed notes (RU)
+- [x] src/lib/markdown.ts — wikilink/tag extraction + rendering
+- [x] Theme: dark Obsidian-like (purple accent) in index.css, APP_NAME
+- [x] Notes view: list + markdown editor (edit/preview) + right panel (backlinks, meta)
+- [x] Graph view: force-directed canvas graph, click → open note
+- [x] Calendar view: month grid, notes by creation date, tasks by due date
+- [x] Tasks: add/complete/delete, due dates
+- [x] Timer: pomodoro (focus/break), persistent across views
+- [x] Extras: search, tags, pin, export/import JSON, stats
+- [x] App.tsx routes (no convex auth in front; platform viktor_auth protects)
+- [x] bun run sync:build, fix errors
+- [x] e2e test (create note, link, backlink, task, calendar, timer)
+- [x] Screenshots
+- [x] Deploy preview, Slack message w/ screenshots + URL + prod approval buttons
 - [ ] Wait approval → deploy production
+
+Status: preview deployed (https://preview-mindgarden-504f6f4e.viktor.space), waiting for Svat approval to deploy production.

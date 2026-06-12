@@ -1,6 +1,7 @@
 import {
   CalendarPlus,
   Eye,
+  FileText,
   Info,
   Link2,
   PanelLeft,
@@ -86,6 +87,11 @@ export function NotesPage() {
   const [showList, setShowList] = useState(true);
   const [showInfo, setShowInfo] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [linkSuggest, setLinkSuggest] = useState<{
+    start: number;
+    frag: string;
+  } | null>(null);
+  const [suggestIdx, setSuggestIdx] = useState(0);
 
   const sorted = useMemo(() => {
     const filtered = notes.filter(n => {
@@ -133,6 +139,68 @@ export function NotesPage() {
     const note = createNote();
     setEditing(true);
     navigate(`/note/${note.id}`);
+  };
+
+  const detectSuggest = (el: HTMLTextAreaElement) => {
+    const caret = el.selectionStart ?? 0;
+    const text = el.value.slice(0, caret);
+    const open = text.lastIndexOf("[[");
+    if (open === -1) return null;
+    const frag = text.slice(open + 2);
+    if (frag.includes("]]") || frag.includes("\n") || frag.length > 60)
+      return null;
+    return { start: open + 2, frag };
+  };
+
+  const suggestions = useMemo(() => {
+    if (!linkSuggest) return [];
+    const q = linkSuggest.frag.trim().toLowerCase();
+    const rank = (t: string) => (q && t.toLowerCase().startsWith(q) ? 0 : 1);
+    return notes
+      .filter(n => n.id !== active?.id)
+      .filter(n => !q || n.title.toLowerCase().includes(q))
+      .sort(
+        (a, b) =>
+          rank(a.title) - rank(b.title) || b.updatedAt - a.updatedAt,
+      )
+      .slice(0, 6);
+  }, [linkSuggest, notes, active]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset highlight when the typed fragment changes
+  useEffect(() => {
+    setSuggestIdx(0);
+  }, [linkSuggest?.frag]);
+
+  const insertLink = (title: string) => {
+    const el = textareaRef.current;
+    if (!el || !linkSuggest || !active) return;
+    const caret = el.selectionStart ?? linkSuggest.start;
+    const before = `${active.content.slice(0, linkSuggest.start) + title}]]`;
+    let after = active.content.slice(caret);
+    if (after.startsWith("]]")) after = after.slice(2);
+    updateNote(active.id, { content: before + after });
+    setLinkSuggest(null);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(before.length, before.length);
+    });
+  };
+
+  const triggerLinkInsert = () => {
+    if (!active) return;
+    setEditing(true);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      const caret = el.selectionStart ?? active.content.length;
+      const next = `${active.content.slice(0, caret)}[[${active.content.slice(caret)}`;
+      updateNote(active.id, { content: next });
+      requestAnimationFrame(() => {
+        el.focus();
+        el.setSelectionRange(caret + 2, caret + 2);
+        setLinkSuggest({ start: caret + 2, frag: "" });
+      });
+    });
   };
 
   const outgoing = active ? (linksOf.get(active.id) ?? []) : [];
@@ -284,6 +352,20 @@ export function NotesPage() {
                     variant="ghost"
                     size="icon"
                     className="size-8"
+                    onClick={triggerLinkInsert}
+                    data-testid="insert-link"
+                  >
+                    <Link2 className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Вставить ссылку на заметку</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
                     onClick={() =>
                       updateNote(active.id, { pinned: !active.pinned })
                     }
@@ -318,7 +400,8 @@ export function NotesPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Удалить заметку?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      «{active.title}» будет удалена безвозвратно.
+                      «{active.title}» отправится в корзину — восстановить можно
+                      в Архиве.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -326,11 +409,11 @@ export function NotesPage() {
                     <AlertDialogAction
                       onClick={() => {
                         deleteNote(active.id);
-                        toast.success("Заметка удалена");
+                        toast.success("Заметка перемещена в корзину");
                         navigate("/");
                       }}
                     >
-                      Удалить
+                      В корзину
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -348,18 +431,76 @@ export function NotesPage() {
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               {editing ? (
-                <textarea
-                  ref={textareaRef}
-                  value={active.content}
-                  onChange={e =>
-                    updateNote(active.id, { content: e.target.value })
-                  }
-                  placeholder={
-                    "Пиши здесь…\n\nСвязывай мысли: [[Название заметки]]\nДобавляй теги: #идея"
-                  }
-                  className="block size-full resize-none bg-transparent px-6 py-5 font-mono text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/60"
-                  data-testid="note-editor"
-                />
+                <div className="relative size-full">
+                  <textarea
+                    ref={textareaRef}
+                    value={active.content}
+                    onChange={e => {
+                      updateNote(active.id, { content: e.target.value });
+                      setLinkSuggest(detectSuggest(e.target));
+                    }}
+                    onClick={e =>
+                      setLinkSuggest(detectSuggest(e.currentTarget))
+                    }
+                    onBlur={() => setTimeout(() => setLinkSuggest(null), 150)}
+                    onKeyDown={e => {
+                      if (!linkSuggest || suggestions.length === 0) return;
+                      if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        setSuggestIdx(i => (i + 1) % suggestions.length);
+                      } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        setSuggestIdx(
+                          i =>
+                            (i - 1 + suggestions.length) % suggestions.length,
+                        );
+                      } else if (e.key === "Enter" || e.key === "Tab") {
+                        e.preventDefault();
+                        insertLink(suggestions[suggestIdx].title);
+                      } else if (e.key === "Escape") {
+                        setLinkSuggest(null);
+                      }
+                    }}
+                    placeholder={
+                      "Пиши здесь…\n\nСвязывай мысли: [[Название заметки]]\nДобавляй теги: #идея"
+                    }
+                    className="block size-full resize-none bg-transparent px-6 py-5 font-mono text-[15px] leading-relaxed outline-none placeholder:text-muted-foreground/60"
+                    data-testid="note-editor"
+                  />
+                  {linkSuggest && suggestions.length > 0 && (
+                    <div
+                      className="absolute left-6 top-12 z-20 w-72 overflow-hidden rounded-xl border border-border bg-popover shadow-xl"
+                      data-testid="link-suggest"
+                    >
+                      <p className="border-b border-border/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Связать с заметкой
+                      </p>
+                      {suggestions.map((n, i) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onMouseDown={e => {
+                            e.preventDefault();
+                            insertLink(n.title);
+                          }}
+                          onMouseEnter={() => setSuggestIdx(i)}
+                          className={cn(
+                            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm",
+                            i === suggestIdx
+                              ? "bg-primary/15 text-primary"
+                              : "text-foreground",
+                          )}
+                        >
+                          <FileText className="size-3.5 shrink-0 opacity-60" />
+                          <span className="truncate">{n.title}</span>
+                        </button>
+                      ))}
+                      <p className="border-t border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
+                        ↑↓ выбрать · Enter вставить · Esc закрыть
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <MarkdownView
                   content={

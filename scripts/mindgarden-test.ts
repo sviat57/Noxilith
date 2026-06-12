@@ -171,6 +171,87 @@ async function main() {
       "note persisted after reload",
     );
 
+    // ── 9. Wikilink autocomplete ──
+    await page.goto(`${APP_URL}/`, { waitUntil: "networkidle" });
+    await page.getByTestId("new-note").click();
+    await page.waitForTimeout(300);
+    await page.getByTestId("note-title").fill("Проверка ссылок");
+    const editor = page.getByTestId("note-editor");
+    await editor.click();
+    await editor.pressSequentially("Идея: [[Мет", { delay: 30 });
+    assert(
+      await page.getByTestId("link-suggest").isVisible(),
+      "autocomplete panel appears after [[",
+    );
+    await shot("06-autocomplete.png");
+    await page.keyboard.press("Enter");
+    const edited = await editor.inputValue();
+    assert(
+      edited.includes("[[Метод Zettelkasten]]"),
+      `autocomplete inserted link, got: ${edited}`,
+    );
+
+    // ── 10. Trash: delete note -> archive -> restore ──
+    await page.locator("button:has(svg.lucide-trash2), button:has(svg.lucide-trash-2)").first().click();
+    await page.getByRole("button", { name: "В корзину" }).click();
+    await page.waitForTimeout(300);
+    await page.goto(`${APP_URL}/archive`, { waitUntil: "networkidle" });
+    await page.getByTestId("tab-trash").click();
+    await page.waitForTimeout(200);
+    assert(
+      (await page.getByTestId("trash-list").textContent())?.includes(
+        "Проверка ссылок",
+      ),
+      "deleted note shown in trash",
+    );
+    await shot("05-archive.png");
+    await page.getByTestId("note-restore").first().click();
+    await page.waitForURL(/\/note\//, { timeout: 5000 });
+    assert(
+      (await page.getByTestId("note-title").inputValue()) === "Проверка ссылок",
+      "note restored from trash",
+    );
+
+    // ── 11. Completed tasks tab ──
+    await page.goto(`${APP_URL}/calendar`, { waitUntil: "networkidle" });
+    await page
+      .getByTestId("task-list")
+      .locator("li button")
+      .first()
+      .click(); // toggle first task done
+    await page.waitForTimeout(200);
+    await page.goto(`${APP_URL}/archive`, { waitUntil: "networkidle" });
+    const doneText = await page.getByTestId("done-list").textContent();
+    assert(
+      doneText !== null && doneText.includes("выполнено"),
+      "completed task shown in archive",
+    );
+    await page.getByTestId("task-reopen").first().click();
+    await page.waitForTimeout(200);
+
+    // ── 12. Command palette (Ctrl+K) ──
+    await page.keyboard.press("Control+k");
+    await page.waitForTimeout(300);
+    assert(
+      await page.getByTestId("palette-input").isVisible(),
+      "palette opens on Ctrl+K",
+    );
+    await page.getByTestId("palette-input").fill("Zettel");
+    await page.waitForTimeout(200);
+    await page.keyboard.press("Enter");
+    await page.waitForURL(/\/note\//, { timeout: 5000 });
+    assert(
+      (await page.getByTestId("note-title").inputValue()) ===
+        "Метод Zettelkasten",
+      "palette navigates to note",
+    );
+
+    // ── 13. Daily note ──
+    await page.locator("button[aria-label='Заметка дня']").click();
+    await page.waitForTimeout(300);
+    const dailyTitle = await page.getByTestId("note-title").inputValue();
+    assert(/^\d+ .+ \d{4}$/.test(dailyTitle), `daily note created: ${dailyTitle}`);
+
     console.log("\n✅ MindGarden e2e PASSED\n");
   } catch (err) {
     await shot("failure.png");
