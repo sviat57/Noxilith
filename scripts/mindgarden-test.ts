@@ -289,7 +289,7 @@ async function main() {
       await page.getByTestId("transfer-dialog").isVisible(),
       "transfer dialog opens",
     );
-    for (const f of ["json", "md", "txt", "xlsx", "pptx"]) {
+    for (const f of ["json", "md", "txt", "xlsx", "pptx", "docx", "pdf"]) {
       assert(
         await page.getByTestId(`export-${f}`).isVisible(),
         `export format ${f} present`,
@@ -303,12 +303,44 @@ async function main() {
       file.suggestedFilename().endsWith(".xlsx"),
       `xlsx downloaded: ${file.suggestedFilename()}`,
     );
+    const dlPdf = page.waitForEvent("download", { timeout: 20000 });
+    await page.getByTestId("export-pdf").click();
+    const pdfFile = await dlPdf;
+    assert(
+      pdfFile.suggestedFilename().endsWith(".pdf"),
+      `pdf exported: ${pdfFile.suggestedFilename()}`,
+    );
+    const dlDocx = page.waitForEvent("download", { timeout: 20000 });
+    await page.getByTestId("export-docx").click();
+    const docxFile = await dlDocx;
+    assert(
+      docxFile.suggestedFilename().endsWith(".docx"),
+      `docx exported: ${docxFile.suggestedFilename()}`,
+    );
     await page.getByTestId("tab-import").click();
     assert(
       await page.getByTestId("import-pick").isVisible(),
       "import tab shows dropzone",
     );
-    await page.keyboard.press("Escape");
+
+    // ── 16b. Import .docx and .pdf via file input ──
+    await page
+      .locator("input[type=file]")
+      .setInputFiles([
+        "tmp/fixtures/import-test.docx",
+        "tmp/fixtures/import-test.pdf",
+      ]);
+    await page.waitForTimeout(2500);
+    await page.goto(APP_URL, { waitUntil: "networkidle" });
+    const sidebar = await page.textContent("body");
+    assert(
+      sidebar !== null && sidebar.includes("Заметка из Word"),
+      "docx imported with H1 title",
+    );
+    assert(
+      sidebar !== null && sidebar.includes("import-test"),
+      "pdf imported as note",
+    );
 
     // ── 17. Stats page ──
     await page.goto(`${APP_URL}/stats`, { waitUntil: "networkidle" });

@@ -160,6 +160,155 @@ export async function exportPptx(notes: Note[]): Promise<void> {
   await pptx.writeFile({ fileName: `mindgarden-${stamp()}.pptx` });
 }
 
+async function fetchFontBase64(path: string): Promise<string> {
+  const buf = await (await fetch(path)).arrayBuffer();
+  let bin = "";
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+export async function exportPdf(notes: Note[]): Promise<void> {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const [regular, bold] = await Promise.all([
+    fetchFontBase64("/fonts/DejaVuSans.ttf"),
+    fetchFontBase64("/fonts/DejaVuSans-Bold.ttf"),
+  ]);
+  doc.addFileToVFS("DejaVuSans.ttf", regular);
+  doc.addFont("DejaVuSans.ttf", "DejaVu", "normal");
+  doc.addFileToVFS("DejaVuSans-Bold.ttf", bold);
+  doc.addFont("DejaVuSans-Bold.ttf", "DejaVu", "bold");
+
+  const W = 210;
+  const M = 20;
+  const bottom = 277;
+  let y = 0;
+
+  // Title page
+  doc.setFont("DejaVu", "bold");
+  doc.setFontSize(30);
+  doc.setTextColor(109, 78, 217);
+  doc.text("MindGarden", W / 2, 120, { align: "center" });
+  doc.setFont("DejaVu", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(120, 120, 130);
+  doc.text(
+    `Экспорт заметок · ${new Date().toLocaleDateString("ru-RU")} · заметок: ${notes.length}`,
+    W / 2,
+    132,
+    { align: "center" },
+  );
+
+  for (const n of notes) {
+    doc.addPage();
+    y = M + 4;
+    doc.setFont("DejaVu", "bold");
+    doc.setFontSize(17);
+    doc.setTextColor(40, 35, 60);
+    for (const line of doc.splitTextToSize(n.title, W - M * 2) as string[]) {
+      doc.text(line, M, y);
+      y += 8;
+    }
+    doc.setFont("DejaVu", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(140, 140, 150);
+    doc.text(
+      `создана ${fmtDate(n.createdAt)} · изменена ${fmtDate(n.updatedAt)}`,
+      M,
+      y,
+    );
+    y += 4;
+    doc.setDrawColor(109, 78, 217);
+    doc.setLineWidth(0.5);
+    doc.line(M, y, W - M, y);
+    y += 8;
+    doc.setFontSize(11);
+    doc.setTextColor(50, 50, 60);
+    const body = n.content || "(пустая заметка)";
+    for (const line of doc.splitTextToSize(body, W - M * 2) as string[]) {
+      if (y > bottom) {
+        doc.addPage();
+        y = M;
+      }
+      doc.text(line, M, y);
+      y += 5.6;
+    }
+  }
+  doc.save(`mindgarden-${stamp()}.pdf`);
+}
+
+export async function exportDocx(notes: Note[]): Promise<void> {
+  const { Document, HeadingLevel, Packer, Paragraph, TextRun, AlignmentType } =
+    await import("docx");
+
+  const children = [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 2400, after: 200 },
+      children: [
+        new TextRun({
+          text: "MindGarden 🌱",
+          bold: true,
+          size: 64,
+          color: "6D4ED9",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: `Экспорт заметок · ${new Date().toLocaleDateString("ru-RU")} · заметок: ${notes.length}`,
+          size: 22,
+          color: "8A8A96",
+        }),
+      ],
+    }),
+  ];
+
+  for (const n of notes) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        pageBreakBefore: true,
+        children: [new TextRun({ text: n.title, bold: true, color: "6D4ED9" })],
+      }),
+      new Paragraph({
+        spacing: { after: 200 },
+        children: [
+          new TextRun({
+            text: `создана ${fmtDate(n.createdAt)} · изменена ${fmtDate(n.updatedAt)}`,
+            italics: true,
+            size: 18,
+            color: "8A8A96",
+          }),
+        ],
+      }),
+    );
+    for (const line of (n.content || "(пустая заметка)").split("\n")) {
+      children.push(
+        new Paragraph({
+          spacing: { after: 80 },
+          children: [new TextRun({ text: line, size: 22 })],
+        }),
+      );
+    }
+  }
+
+  const doc = new Document({
+    sections: [{ children }],
+    styles: {
+      default: { document: { run: { font: "Calibri" } } },
+    },
+  });
+  const blob = await Packer.toBlob(doc);
+  download(blob, `mindgarden-${stamp()}.docx`);
+}
+
 // ── Import ──
 
 export interface ImportHandlers {
@@ -218,6 +367,46 @@ export async function importFiles(
             res.notes++;
           }
         }
+      } else if (ext === "docx") {
+        const mammoth = await import("mammoth");
+        const { default: TurndownService } = await import("turndown");
+        const { value: html } = await mammoth.convertToHtml({
+          arrayBuffer: await file.arrayBuffer(),
+        });
+        const td = new TurndownService({
+          headingStyle: "atx",
+          bulletListMarker: "-",
+        });
+        const md = td.turndown(html);
+        const base = file.name.replace(/\.docx$/i, "");
+        const m = md.match(/^#\s+(.+)\n+/);
+        h.createNote(m ? m[1].trim() : base, m ? md.slice(m[0].length) : md);
+        res.notes++;
+      } else if (ext === "pdf") {
+        const pdfjs = await import("pdfjs-dist");
+        const workerUrl = (
+          await import("pdfjs-dist/build/pdf.worker.min.mjs?url")
+        ).default;
+        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        const pdf = await pdfjs.getDocument({
+          data: await file.arrayBuffer(),
+        }).promise;
+        const pages: string[] = [];
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const tc = await page.getTextContent();
+          let text = "";
+          for (const item of tc.items) {
+            if ("str" in item) {
+              text += item.str;
+              if (item.hasEOL) text += "\n";
+            }
+          }
+          pages.push(text.trim());
+        }
+        const base = file.name.replace(/\.pdf$/i, "");
+        h.createNote(base, pages.filter(Boolean).join("\n\n"));
+        res.notes++;
       } else {
         res.errors.push(`${file.name}: формат .${ext} не поддерживается`);
       }

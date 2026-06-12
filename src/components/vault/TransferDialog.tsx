@@ -3,6 +3,7 @@ import {
   FileDown,
   FileSpreadsheet,
   FileText,
+  FileType2,
   FileUp,
   Presentation,
   Upload,
@@ -18,8 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  exportDocx,
   exportJson,
   exportMarkdown,
+  exportPdf,
   exportPptx,
   exportTxt,
   exportXlsx,
@@ -65,6 +68,18 @@ const EXPORT_FORMATS: Format[] = [
     desc: "Презентация — по слайду на каждую заметку.",
     icon: <Presentation className="size-5" />,
   },
+  {
+    id: "docx",
+    name: "Word (.docx)",
+    desc: "Документ Word — заметки с заголовками и датами.",
+    icon: <FileType2 className="size-5" />,
+  },
+  {
+    id: "pdf",
+    name: "PDF",
+    desc: "Красивый документ для чтения и печати.",
+    icon: <FileDown className="size-5" />,
+  },
 ];
 
 export function TransferDialog({
@@ -85,6 +100,8 @@ export function TransferDialog({
       else if (id === "txt") await exportTxt(notes);
       else if (id === "xlsx") exportXlsx(notes, tasks);
       else if (id === "pptx") await exportPptx(notes);
+      else if (id === "docx") await exportDocx(notes);
+      else if (id === "pdf") await exportPdf(notes);
       toast.success("Экспорт готов — файл скачивается");
     } catch {
       toast.error("Не получилось экспортировать");
@@ -168,14 +185,15 @@ export function TransferDialog({
                 </button>
               </p>
               <p className="text-xs text-muted-foreground">
-                Поддерживаются: .json (полный бэкап), .md и .txt (каждый файл →
-                заметка), .xlsx / .csv (строки таблицы → заметки)
+                Поддерживаются: .json (полный бэкап), .md и .txt (файл →
+                заметка), .docx и .pdf (текст → заметка), .xlsx / .csv (строки →
+                заметки)
               </p>
               <input
                 ref={fileRef}
                 type="file"
                 multiple
-                accept=".json,.md,.txt,.xlsx,.xls,.csv"
+                accept=".json,.md,.txt,.xlsx,.xls,.csv,.docx,.pdf"
                 className="hidden"
                 onChange={e => {
                   if (e.target.files?.length) doImport(e.target.files);
