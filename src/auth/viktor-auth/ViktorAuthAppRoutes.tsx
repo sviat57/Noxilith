@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { PublicHeader } from "@/components/PublicHeader";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { VaultLayout } from "@/components/vault/VaultLayout";
+import { TimerProvider } from "@/lib/timer";
+import { VaultProvider } from "@/lib/vault";
 import { beginViktorAuthentication } from "@/lib/viktor-spaces-access/client";
 import {
   getViktorAuthBaseUrl,
@@ -17,37 +19,10 @@ import {
   type ViktorAuthSession,
 } from "@/lib/viktor-spaces-access/ViktorAuthGlobalGate";
 import { ViktorSpaceAccessProvider } from "@/lib/viktor-spaces-access/ViktorSpaceAccessProvider";
-import { PublicLandingPage } from "@/pages/PublicLandingPage";
-
-function ViktorPublicShell() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <PublicHeader />
-      <main className="flex-1 flex flex-col">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
-function ViktorAppShell() {
-  return (
-    <div className="min-h-screen">
-      <header className="border-b px-4 py-3 font-medium">Viktor Space</header>
-      <main className="p-4 lg:p-6">
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
-function ViktorDashboardPage() {
-  return <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>;
-}
-
-function ViktorSettingsPage() {
-  return <h1 className="text-2xl font-bold tracking-tight">Settings</h1>;
-}
+import { CalendarPage } from "@/pages/vault/CalendarPage";
+import { GraphPage } from "@/pages/vault/GraphPage";
+import { NotesPage } from "@/pages/vault/NotesPage";
+import { TimerPage } from "@/pages/vault/TimerPage";
 
 function toViktorSession(status: ViktorAuthStatus): ViktorAuthSession {
   if (status.status !== "allowed") {
@@ -135,18 +110,20 @@ export function ViktorAuthAppRoutes({
         session={activeSession}
         onSignInRequired={beginSignIn}
       >
-        <Routes>
-          <Route element={<ViktorPublicShell />}>
-            <Route path="/" element={<PublicLandingPage />} />
-          </Route>
-
-          <Route element={<ViktorAppShell />}>
-            <Route path="/dashboard" element={<ViktorDashboardPage />} />
-            <Route path="/settings" element={<ViktorSettingsPage />} />
-          </Route>
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <VaultProvider>
+          <TimerProvider>
+            <Routes>
+              <Route element={<VaultLayout />}>
+                <Route path="/" element={<NotesPage />} />
+                <Route path="/note/:id" element={<NotesPage />} />
+                <Route path="/graph" element={<GraphPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/timer" element={<TimerPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </TimerProvider>
+        </VaultProvider>
       </ViktorAuthGlobalGate>
     </ViktorSpaceAccessProvider>
   );
