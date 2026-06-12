@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   Check,
+  CloudUpload,
   FileText,
   Moon,
   NotebookPen,
@@ -27,9 +28,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AccountDialog } from "@/components/vault/AccountDialog";
 import { CommandPalette } from "@/components/vault/CommandPalette";
 import { TransferDialog } from "@/components/vault/TransferDialog";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useCloud } from "@/lib/cloud";
 import { PALETTES, setPrefs, usePrefs } from "@/lib/prefs";
 import { formatClock, useTimer } from "@/lib/timer";
 import { cn } from "@/lib/utils";
@@ -120,6 +123,8 @@ export function VaultLayout() {
   const { getDailyNote } = useVault();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const { user, syncStatus } = useCloud();
   const { palette } = usePrefs();
   const { running } = useTimer();
 
@@ -192,6 +197,34 @@ export function VaultLayout() {
 
           <div className="mt-auto flex flex-col items-center gap-1">
             <RibbonAction
+              label={
+                user
+                  ? syncStatus === "error"
+                    ? "Облако: ошибка синхронизации"
+                    : syncStatus === "syncing"
+                      ? "Облако: синхронизация…"
+                      : "Облако: синхронизировано"
+                  : "Облачная синхронизация — войти"
+              }
+              onClick={() => setAccountOpen(true)}
+            >
+              <span className="relative flex">
+                <CloudUpload className="size-4" />
+                <span
+                  className={cn(
+                    "absolute -right-1 -top-1 size-1.5 rounded-full",
+                    user
+                      ? syncStatus === "error"
+                        ? "bg-destructive"
+                        : syncStatus === "syncing"
+                          ? "bg-amber-400 animate-pulse"
+                          : "bg-emerald-400"
+                      : "bg-muted-foreground/50",
+                  )}
+                />
+              </span>
+            </RibbonAction>
+            <RibbonAction
               label="Экспорт и импорт"
               onClick={() => setTransferOpen(true)}
             >
@@ -263,6 +296,7 @@ export function VaultLayout() {
         <FloatingTimerPill />
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
         <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} />
+        <AccountDialog open={accountOpen} onOpenChange={setAccountOpen} />
       </div>
     </TooltipProvider>
   );

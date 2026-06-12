@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { extractTags, extractWikilinks } from "@/lib/markdown";
+import { useCloudSync } from "@/lib/sync";
 
 export interface Note {
   id: string;
@@ -32,7 +33,7 @@ export interface Task {
 const NOTES_KEY = "noxilith.notes.v1";
 const TASKS_KEY = "noxilith.tasks.v1";
 
-/** One-time migration from the old Noxilith storage keys. */
+/** One-time migration from the old MindGarden storage keys. */
 function migrateKey(newKey: string): void {
   const oldKey = newKey.replace(/^noxilith\./, "mindgarden.");
   if (localStorage.getItem(newKey) === null) {
@@ -231,6 +232,8 @@ const VaultContext = createContext<VaultContextValue | null>(null);
 export function VaultProvider({ children }: { children: ReactNode }) {
   const [allNotes, setNotes] = useState<Note[]>(loadNotes);
   const [allTasks, setTasks] = useState<Task[]>(loadTasks);
+
+  useCloudSync(allNotes, allTasks, setNotes, setTasks);
 
   useEffect(() => {
     localStorage.setItem(NOTES_KEY, JSON.stringify(allNotes));

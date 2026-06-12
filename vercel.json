@@ -1,12 +1,4 @@
 {
-  "rewrites": [
-    {
-      "source": "/__viktor_auth/:path*",
-      "destination": "https://dynamic-cod-971.convex.site/__viktor_auth/:path*?space_origin=https%3A%2F%2Fpreview-mindgarden-504f6f4e.viktor.space"
-    },
-    {
-      "source": "/((?!assets/|__viktor_meta\\.json).*)",
-      "destination": "/index.html"
-    }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

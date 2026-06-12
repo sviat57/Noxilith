@@ -360,6 +360,54 @@ async function main() {
     // reset palette back to default for repeatability
     await page.evaluate(() => localStorage.removeItem("noxilith.prefs.v1"));
 
+    // ── 18. Cloud sync: sign up, edit a note, fresh device, sign in ──
+    const email = `svat-noxi-e2e-${Date.now()}@yahoo.com`;
+    const password = "Noxi-e2e-12345";
+    await page.goto(`${APP_URL}/`, { waitUntil: "networkidle" });
+    await page.getByLabel("Облачная синхронизация — войти").click();
+    await page.getByRole("tab", { name: "Регистрация" }).click();
+    await page.locator("#email-up").fill(email);
+    await page.locator("#password-up").fill(password);
+    await page.getByRole("button", { name: "Создать аккаунт" }).click();
+    await page.waitForSelector("text=Аккаунт создан", { timeout: 15000 });
+    // wait until ribbon reports synced
+    await page.waitForSelector('[aria-label="Облако: синхронизировано"]', {
+      timeout: 20000,
+    });
+    // create a fresh note as a cloud-synced marker
+    const cloudMarker = `облачный тест ${Date.now()}`;
+    await page.getByTestId("new-note").click();
+    await page.waitForTimeout(300);
+    await page.getByTestId("note-title").fill("Облачная заметка");
+    const cloudEditor = page.getByTestId("note-editor");
+    await cloudEditor.click();
+    await cloudEditor.fill(`# Облачная заметка\n\n${cloudMarker}`);
+    await page.waitForTimeout(2500); // debounce + push
+    await page.waitForSelector('[aria-label="Облако: синхронизировано"]', {
+      timeout: 20000,
+    });
+
+    // simulate a fresh device: wipe local data, sign in, expect the note back
+    const page2 = await setupPage(browser);
+    await page2.goto(`${APP_URL}/`, { waitUntil: "networkidle" });
+    await page2.getByLabel("Облачная синхронизация — войти").click();
+    await page2.locator("#email-in").fill(email);
+    await page2.locator("#password-in").fill(password);
+    await page2.getByRole("button", { name: "Войти" }).click();
+    await page2.waitForSelector('[aria-label="Облако: синхронизировано"]', {
+      timeout: 20000,
+    });
+    await page2.waitForTimeout(1000);
+    const synced = await page2.evaluate(() =>
+      localStorage.getItem("noxilith.notes.v1"),
+    );
+    assert(
+      synced !== null && synced.includes("облачный тест"),
+      "cloud note synced to fresh device",
+    );
+    await page2.screenshot({ path: join(TMP_DIR, "12-cloud-sync.png") });
+    await page2.context().close();
+
     console.log("\n✅ Noxilith e2e PASSED\n");
   } catch (err) {
     await shot("failure.png");
