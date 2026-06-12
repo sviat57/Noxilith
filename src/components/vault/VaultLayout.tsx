@@ -1,20 +1,26 @@
 import {
   Archive,
+  ArrowDownUp,
+  BarChart3,
   CalendarDays,
-  Download,
+  Check,
   FileText,
   Moon,
   NotebookPen,
+  Palette,
   Search,
   Sprout,
   Sun,
   TimerIcon,
-  Upload,
   Waypoints,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
@@ -22,7 +28,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CommandPalette } from "@/components/vault/CommandPalette";
+import { TransferDialog } from "@/components/vault/TransferDialog";
 import { useTheme } from "@/contexts/ThemeContext";
+import { PALETTES, setPrefs, usePrefs } from "@/lib/prefs";
 import { formatClock, useTimer } from "@/lib/timer";
 import { cn } from "@/lib/utils";
 import { useVault } from "@/lib/vault";
@@ -109,38 +117,14 @@ export function VaultLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme, switchable } = useTheme();
-  const { exportData, importData, getDailyNote } = useVault();
+  const { getDailyNote } = useVault();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const { palette } = usePrefs();
   const { running } = useTimer();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const path = location.pathname;
   const isNotes = path === "/" || path.startsWith("/note");
-
-  const handleExport = () => {
-    const blob = new Blob([exportData()], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `mindgarden-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Резервная копия сохранена");
-  };
-
-  const handleImportFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const ok = importData(String(reader.result));
-      if (ok) {
-        toast.success("Данные импортированы");
-        navigate("/");
-      } else {
-        toast.error("Не удалось прочитать файл");
-      }
-    };
-    reader.readAsText(file);
-  };
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -181,6 +165,13 @@ export function VaultLayout() {
           >
             <Archive className="size-5" />
           </RibbonButton>
+          <RibbonButton
+            to="/stats"
+            label="Статистика"
+            active={path === "/stats"}
+          >
+            <BarChart3 className="size-5" />
+          </RibbonButton>
 
           <div className="my-1 h-px w-7 bg-border/70" />
           <RibbonAction
@@ -200,17 +191,62 @@ export function VaultLayout() {
           </RibbonAction>
 
           <div className="mt-auto flex flex-col items-center gap-1">
-            <RibbonAction label="Экспорт данных" onClick={handleExport}>
-              <Download className="size-4" />
-            </RibbonAction>
             <RibbonAction
-              label="Импорт данных"
-              onClick={() => fileRef.current?.click()}
+              label="Экспорт и импорт"
+              onClick={() => setTransferOpen(true)}
             >
-              <Upload className="size-4" />
+              <ArrowDownUp className="size-4" />
             </RibbonAction>
+            <Popover>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Цветовая тема"
+                      data-testid="palette-picker"
+                      className="flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-accent hover:text-foreground"
+                    >
+                      <Palette className="size-4" />
+                    </button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="right">Цветовая тема</TooltipContent>
+              </Tooltip>
+              <PopoverContent side="right" align="end" className="w-60 p-2">
+                <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Цветовая тема
+                </p>
+                {PALETTES.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    data-testid={`palette-${p.id}`}
+                    onClick={() => setPrefs({ palette: p.id })}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm transition-colors hover:bg-accent",
+                      palette === p.id && "bg-accent",
+                    )}
+                  >
+                    <span className="flex shrink-0 -space-x-1">
+                      {p.swatch.map(c => (
+                        <span
+                          key={c}
+                          className="size-4 rounded-full border border-black/20"
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
+                    </span>
+                    <span className="flex-1 truncate">{p.name}</span>
+                    {palette === p.id && (
+                      <Check className="size-4 text-primary" />
+                    )}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
             {switchable && toggleTheme && (
-              <RibbonAction label="Сменить тему" onClick={toggleTheme}>
+              <RibbonAction label="Светлая / тёмная" onClick={toggleTheme}>
                 {theme === "dark" ? (
                   <Sun className="size-4" />
                 ) : (
@@ -219,17 +255,6 @@ export function VaultLayout() {
               </RibbonAction>
             )}
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={e => {
-              const f = e.target.files?.[0];
-              if (f) handleImportFile(f);
-              e.target.value = "";
-            }}
-          />
         </nav>
 
         <main className="min-w-0 flex-1">
@@ -237,6 +262,7 @@ export function VaultLayout() {
         </main>
         <FloatingTimerPill />
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+        <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} />
       </div>
     </TooltipProvider>
   );

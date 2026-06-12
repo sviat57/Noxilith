@@ -1,5 +1,6 @@
 import {
   Archive,
+  BarChart3,
   CalendarDays,
   FileText,
   NotebookPen,
@@ -28,6 +29,7 @@ const PAGES = [
   { to: "/calendar", label: "Календарь", icon: CalendarDays },
   { to: "/timer", label: "Таймер", icon: TimerIcon },
   { to: "/archive", label: "Архив", icon: Archive },
+  { to: "/stats", label: "Статистика", icon: BarChart3 },
 ];
 
 export function CommandPalette({

@@ -23,6 +23,7 @@ import { ArchivePage } from "@/pages/vault/ArchivePage";
 import { CalendarPage } from "@/pages/vault/CalendarPage";
 import { GraphPage } from "@/pages/vault/GraphPage";
 import { NotesPage } from "@/pages/vault/NotesPage";
+import { StatsPage } from "@/pages/vault/StatsPage";
 import { TimerPage } from "@/pages/vault/TimerPage";
 
 function toViktorSession(status: ViktorAuthStatus): ViktorAuthSession {
@@ -121,6 +122,7 @@ export function ViktorAuthAppRoutes({
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/timer" element={<TimerPage />} />
                 <Route path="/archive" element={<ArchivePage />} />
+                <Route path="/stats" element={<StatsPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -308,3 +308,165 @@ body {
   font-weight: 600;
   opacity: 0.85;
 }
+
+/* ═══════════ Custom palettes (60/30/10) ═══════════ */
+
+/* ── Северное сияние: deep teal night + mint aurora ── */
+[data-theme="aurora"] {
+  --primary: oklch(0.52 0.12 175);
+  --primary-foreground: oklch(0.98 0.01 175);
+  --ring: oklch(0.52 0.12 175);
+  --background: oklch(0.975 0.008 200);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.955 0.012 200);
+  --accent: oklch(0.93 0.02 190);
+  --accent-foreground: oklch(0.25 0.05 190);
+}
+.dark[data-theme="aurora"] {
+  --primary: oklch(0.8 0.14 168);
+  --primary-foreground: oklch(0.18 0.05 175);
+  --ring: oklch(0.8 0.14 168);
+  --background: oklch(0.16 0.022 215);
+  --foreground: oklch(0.93 0.012 190);
+  --card: oklch(0.2 0.025 213);
+  --card-foreground: oklch(0.93 0.012 190);
+  --popover: oklch(0.2 0.025 213);
+  --popover-foreground: oklch(0.93 0.012 190);
+  --secondary: oklch(0.25 0.03 210);
+  --secondary-foreground: oklch(0.9 0.012 190);
+  --muted: oklch(0.25 0.03 210);
+  --muted-foreground: oklch(0.64 0.03 195);
+  --accent: oklch(0.27 0.04 200);
+  --accent-foreground: oklch(0.93 0.012 190);
+  --sidebar: oklch(0.18 0.024 214);
+  --sidebar-foreground: oklch(0.93 0.012 190);
+  --sidebar-accent: oklch(0.25 0.03 210);
+}
+
+/* ── Закат: warm charcoal + coral ember ── */
+[data-theme="sunset"] {
+  --primary: oklch(0.6 0.19 35);
+  --primary-foreground: oklch(0.99 0.01 60);
+  --ring: oklch(0.6 0.19 35);
+  --background: oklch(0.975 0.01 75);
+  --card: oklch(0.995 0.005 80);
+  --sidebar: oklch(0.96 0.014 70);
+  --accent: oklch(0.93 0.03 55);
+  --accent-foreground: oklch(0.3 0.06 40);
+}
+.dark[data-theme="sunset"] {
+  --primary: oklch(0.74 0.16 42);
+  --primary-foreground: oklch(0.2 0.05 35);
+  --ring: oklch(0.74 0.16 42);
+  --background: oklch(0.17 0.014 35);
+  --foreground: oklch(0.93 0.012 50);
+  --card: oklch(0.21 0.017 38);
+  --card-foreground: oklch(0.93 0.012 50);
+  --popover: oklch(0.21 0.017 38);
+  --popover-foreground: oklch(0.93 0.012 50);
+  --secondary: oklch(0.26 0.02 40);
+  --secondary-foreground: oklch(0.9 0.012 50);
+  --muted: oklch(0.26 0.02 40);
+  --muted-foreground: oklch(0.65 0.025 45);
+  --accent: oklch(0.28 0.035 42);
+  --accent-foreground: oklch(0.93 0.012 50);
+  --sidebar: oklch(0.19 0.015 36);
+  --sidebar-foreground: oklch(0.93 0.012 50);
+  --sidebar-accent: oklch(0.26 0.02 40);
+}
+
+/* ── Сакура: blush paper + rose petals ── */
+[data-theme="sakura"] {
+  --primary: oklch(0.62 0.17 357);
+  --primary-foreground: oklch(0.99 0.005 350);
+  --ring: oklch(0.62 0.17 357);
+  --background: oklch(0.977 0.008 350);
+  --card: oklch(0.995 0.004 350);
+  --sidebar: oklch(0.96 0.012 350);
+  --accent: oklch(0.93 0.025 350);
+  --accent-foreground: oklch(0.3 0.06 355);
+}
+.dark[data-theme="sakura"] {
+  --primary: oklch(0.76 0.13 355);
+  --primary-foreground: oklch(0.2 0.05 350);
+  --ring: oklch(0.76 0.13 355);
+  --background: oklch(0.17 0.016 340);
+  --foreground: oklch(0.93 0.012 345);
+  --card: oklch(0.21 0.019 342);
+  --card-foreground: oklch(0.93 0.012 345);
+  --popover: oklch(0.21 0.019 342);
+  --popover-foreground: oklch(0.93 0.012 345);
+  --secondary: oklch(0.26 0.022 343);
+  --secondary-foreground: oklch(0.9 0.012 345);
+  --muted: oklch(0.26 0.022 343);
+  --muted-foreground: oklch(0.65 0.025 348);
+  --accent: oklch(0.28 0.035 348);
+  --accent-foreground: oklch(0.93 0.012 345);
+  --sidebar: oklch(0.19 0.017 341);
+  --sidebar-foreground: oklch(0.93 0.012 345);
+  --sidebar-accent: oklch(0.26 0.022 343);
+}
+
+/* ── Глубокий океан: midnight navy + sky cyan ── */
+[data-theme="ocean"] {
+  --primary: oklch(0.55 0.15 245);
+  --primary-foreground: oklch(0.98 0.008 230);
+  --ring: oklch(0.55 0.15 245);
+  --background: oklch(0.975 0.008 235);
+  --card: oklch(1 0 0);
+  --sidebar: oklch(0.957 0.012 235);
+  --accent: oklch(0.93 0.02 235);
+  --accent-foreground: oklch(0.27 0.06 245);
+}
+.dark[data-theme="ocean"] {
+  --primary: oklch(0.75 0.13 230);
+  --primary-foreground: oklch(0.18 0.05 240);
+  --ring: oklch(0.75 0.13 230);
+  --background: oklch(0.15 0.025 252);
+  --foreground: oklch(0.93 0.012 235);
+  --card: oklch(0.19 0.028 250);
+  --card-foreground: oklch(0.93 0.012 235);
+  --popover: oklch(0.19 0.028 250);
+  --popover-foreground: oklch(0.93 0.012 235);
+  --secondary: oklch(0.24 0.032 248);
+  --secondary-foreground: oklch(0.9 0.012 235);
+  --muted: oklch(0.24 0.032 248);
+  --muted-foreground: oklch(0.63 0.03 238);
+  --accent: oklch(0.26 0.04 242);
+  --accent-foreground: oklch(0.93 0.012 235);
+  --sidebar: oklch(0.17 0.026 251);
+  --sidebar-foreground: oklch(0.93 0.012 235);
+  --sidebar-accent: oklch(0.24 0.032 248);
+}
+
+/* ── Графит и янтарь: pure graphite + amber glow ── */
+[data-theme="amber"] {
+  --primary: oklch(0.6 0.13 70);
+  --primary-foreground: oklch(0.99 0.01 90);
+  --ring: oklch(0.6 0.13 70);
+  --background: oklch(0.975 0.005 90);
+  --card: oklch(0.995 0.003 90);
+  --sidebar: oklch(0.958 0.007 90);
+  --accent: oklch(0.93 0.018 85);
+  --accent-foreground: oklch(0.3 0.05 75);
+}
+.dark[data-theme="amber"] {
+  --primary: oklch(0.8 0.14 80);
+  --primary-foreground: oklch(0.22 0.05 80);
+  --ring: oklch(0.8 0.14 80);
+  --background: oklch(0.16 0.004 80);
+  --foreground: oklch(0.93 0.006 85);
+  --card: oklch(0.2 0.005 80);
+  --card-foreground: oklch(0.93 0.006 85);
+  --popover: oklch(0.2 0.005 80);
+  --popover-foreground: oklch(0.93 0.006 85);
+  --secondary: oklch(0.25 0.007 80);
+  --secondary-foreground: oklch(0.9 0.006 85);
+  --muted: oklch(0.25 0.007 80);
+  --muted-foreground: oklch(0.64 0.015 82);
+  --accent: oklch(0.27 0.015 82);
+  --accent-foreground: oklch(0.93 0.006 85);
+  --sidebar: oklch(0.18 0.004 80);
+  --sidebar-foreground: oklch(0.93 0.006 85);
+  --sidebar-accent: oklch(0.25 0.007 80);
+}

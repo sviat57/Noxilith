@@ -160,8 +160,7 @@ export function NotesPage() {
       .filter(n => n.id !== active?.id)
       .filter(n => !q || n.title.toLowerCase().includes(q))
       .sort(
-        (a, b) =>
-          rank(a.title) - rank(b.title) || b.updatedAt - a.updatedAt,
+        (a, b) => rank(a.title) - rank(b.title) || b.updatedAt - a.updatedAt,
       )
       .slice(0, 6);
   }, [linkSuggest, notes, active]);

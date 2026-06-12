@@ -192,7 +192,10 @@ async function main() {
     );
 
     // ── 10. Trash: delete note -> archive -> restore ──
-    await page.locator("button:has(svg.lucide-trash2), button:has(svg.lucide-trash-2)").first().click();
+    await page
+      .locator("button:has(svg.lucide-trash2), button:has(svg.lucide-trash-2)")
+      .first()
+      .click();
     await page.getByRole("button", { name: "В корзину" }).click();
     await page.waitForTimeout(300);
     await page.goto(`${APP_URL}/archive`, { waitUntil: "networkidle" });
@@ -214,11 +217,7 @@ async function main() {
 
     // ── 11. Completed tasks tab ──
     await page.goto(`${APP_URL}/calendar`, { waitUntil: "networkidle" });
-    await page
-      .getByTestId("task-list")
-      .locator("li button")
-      .first()
-      .click(); // toggle first task done
+    await page.getByTestId("task-list").locator("li button").first().click(); // toggle first task done
     await page.waitForTimeout(200);
     await page.goto(`${APP_URL}/archive`, { waitUntil: "networkidle" });
     const doneText = await page.getByTestId("done-list").textContent();
@@ -250,7 +249,84 @@ async function main() {
     await page.locator("button[aria-label='Заметка дня']").click();
     await page.waitForTimeout(300);
     const dailyTitle = await page.getByTestId("note-title").inputValue();
-    assert(/^\d+ .+ \d{4}$/.test(dailyTitle), `daily note created: ${dailyTitle}`);
+    assert(
+      /^\d+ .+ \d{4}$/.test(dailyTitle),
+      `daily note created: ${dailyTitle}`,
+    );
+
+    // ── 14. Theme palettes ──
+    await page.getByTestId("palette-picker").click();
+    await page.waitForTimeout(300);
+    await page.getByTestId("palette-aurora").click();
+    await page.waitForTimeout(300);
+    assert(
+      (await page.evaluate(() => document.documentElement.dataset.theme)) ===
+        "aurora",
+      "aurora palette applied",
+    );
+    await page.keyboard.press("Escape");
+    await page.reload({ waitUntil: "networkidle" });
+    assert(
+      (await page.evaluate(() => document.documentElement.dataset.theme)) ===
+        "aurora",
+      "palette persists after reload",
+    );
+    await shot("07-theme-aurora.png");
+
+    // ── 15. Graph styles ──
+    await page.goto(`${APP_URL}/graph`, { waitUntil: "networkidle" });
+    await page.getByTestId("graph-style-crystal").click();
+    await page.waitForTimeout(1200);
+    await shot("08-graph-crystal.png");
+    await page.getByTestId("graph-style-neon").click();
+    await page.waitForTimeout(1200);
+    await shot("09-graph-neon.png");
+
+    // ── 16. Transfer dialog ──
+    await page.locator("button[aria-label='Экспорт и импорт']").click();
+    await page.waitForTimeout(300);
+    assert(
+      await page.getByTestId("transfer-dialog").isVisible(),
+      "transfer dialog opens",
+    );
+    for (const f of ["json", "md", "txt", "xlsx", "pptx"]) {
+      assert(
+        await page.getByTestId(`export-${f}`).isVisible(),
+        `export format ${f} present`,
+      );
+    }
+    await shot("10-transfer.png");
+    const dl = page.waitForEvent("download", { timeout: 10000 });
+    await page.getByTestId("export-xlsx").click();
+    const file = await dl;
+    assert(
+      file.suggestedFilename().endsWith(".xlsx"),
+      `xlsx downloaded: ${file.suggestedFilename()}`,
+    );
+    await page.getByTestId("tab-import").click();
+    assert(
+      await page.getByTestId("import-pick").isVisible(),
+      "import tab shows dropzone",
+    );
+    await page.keyboard.press("Escape");
+
+    // ── 17. Stats page ──
+    await page.goto(`${APP_URL}/stats`, { waitUntil: "networkidle" });
+    assert(
+      await page.getByTestId("stats-page").isVisible(),
+      "stats page renders",
+    );
+    const statsText = await page.getByTestId("stats-page").textContent();
+    assert(
+      statsText !== null &&
+        statsText.includes("Активность") &&
+        statsText.includes("Заметок"),
+      "stats page has cards and heatmap",
+    );
+    await shot("11-stats.png");
+
+    // reset palette back to default for repeatability
+    await page.evaluate(() => localStorage.removeItem("mindgarden.prefs.v1"));
 
     console.log("\n✅ MindGarden e2e PASSED\n");
   } catch (err) {
