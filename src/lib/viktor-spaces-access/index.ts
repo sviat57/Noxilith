@@ -1,6 +1,5 @@
 export { AuthStrategyRoutes } from "../../auth/AuthStrategyRoutes";
 export { PublicAppRoutes } from "../../auth/public/PublicAppRoutes";
-export { SpaceAuthAppRoutes } from "../../auth/space-auth/SpaceAuthAppRoutes";
 export { ViktorAuthAppRoutes } from "../../auth/viktor-auth/ViktorAuthAppRoutes";
 export type { ViktorAuthJsProfile, ViktorAuthJsProvider } from "./authjs";
 export { createViktorAuthJsProvider } from "./authjs";

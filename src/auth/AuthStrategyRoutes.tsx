@@ -6,11 +6,6 @@ const PublicAppRoutes = lazy(() =>
     default: module.PublicAppRoutes,
   })),
 );
-const SpaceAuthAppRoutes = lazy(() =>
-  import("./space-auth/SpaceAuthAppRoutes").then(module => ({
-    default: module.SpaceAuthAppRoutes,
-  })),
-);
 const ViktorAuthAppRoutes = lazy(() =>
   import("./viktor-auth/ViktorAuthAppRoutes").then(module => ({
     default: module.ViktorAuthAppRoutes,
@@ -25,13 +20,7 @@ export function AuthStrategyRoutes() {
   const mode = getViktorSpaceAccessMode();
 
   const routes =
-    mode === "viktor_auth" ? (
-      <ViktorAuthAppRoutes />
-    ) : mode === "space_auth" ? (
-      <SpaceAuthAppRoutes />
-    ) : (
-      <PublicAppRoutes />
-    );
+    mode === "viktor_auth" ? <ViktorAuthAppRoutes /> : <PublicAppRoutes />;
 
   return <Suspense fallback={<AuthStrategyLoading />}>{routes}</Suspense>;
 }
