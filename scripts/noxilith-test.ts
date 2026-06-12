@@ -1,5 +1,5 @@
 /**
- * E2E test for MindGarden (viktor_auth mode is mocked locally —
+ * E2E test for Noxilith (viktor_auth mode is mocked locally —
  * the platform serves /__viktor_auth/me in real deployments).
  */
 import { mkdirSync } from "node:fs";
@@ -358,12 +358,12 @@ async function main() {
     await shot("11-stats.png");
 
     // reset palette back to default for repeatability
-    await page.evaluate(() => localStorage.removeItem("mindgarden.prefs.v1"));
+    await page.evaluate(() => localStorage.removeItem("noxilith.prefs.v1"));
 
-    console.log("\n✅ MindGarden e2e PASSED\n");
+    console.log("\n✅ Noxilith e2e PASSED\n");
   } catch (err) {
     await shot("failure.png");
-    console.error("\n❌ MindGarden e2e FAILED:", err);
+    console.error("\n❌ Noxilith e2e FAILED:", err);
     console.error("Page URL:", page.url());
     process.exit(1);
   } finally {

@@ -34,9 +34,6 @@ pdf.setFontSize(16);
 pdf.text("PDF import fixture", 20, 30);
 pdf.setFontSize(11);
 pdf.text("This text was imported from a PDF file.", 20, 45);
-writeFileSync(
-  `${DIR}/import-test.pdf`,
-  Buffer.from(pdf.output("arraybuffer")),
-);
+writeFileSync(`${DIR}/import-test.pdf`, Buffer.from(pdf.output("arraybuffer")));
 
 console.log("fixtures written to", DIR);

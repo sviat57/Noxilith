@@ -34,7 +34,7 @@ const stamp = () => new Date().toISOString().slice(0, 10);
 export function exportJson(json: string): void {
   download(
     new Blob([json], { type: "application/json" }),
-    `mindgarden-${stamp()}.json`,
+    `noxilith-${stamp()}.json`,
   );
 }
 
@@ -53,7 +53,7 @@ async function notesZip(notes: Note[], ext: "md" | "txt"): Promise<void> {
     zip.file(`${name}.${ext}`, header + n.content);
   }
   const blob = await zip.generateAsync({ type: "blob" });
-  download(blob, `mindgarden-${ext}-${stamp()}.zip`);
+  download(blob, `noxilith-${ext}-${stamp()}.zip`);
 }
 
 export const exportMarkdown = (notes: Note[]) => notesZip(notes, "md");
@@ -86,7 +86,7 @@ export function exportXlsx(notes: Note[], tasks: Task[]): void {
   ws2["!cols"] = [{ wch: 40 }, { wch: 12 }, { wch: 10 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, ws1, "Заметки");
   XLSX.utils.book_append_sheet(wb, ws2, "Задачи");
-  XLSX.writeFile(wb, `mindgarden-${stamp()}.xlsx`);
+  XLSX.writeFile(wb, `noxilith-${stamp()}.xlsx`);
 }
 
 export async function exportPptx(notes: Note[]): Promise<void> {
@@ -96,7 +96,7 @@ export async function exportPptx(notes: Note[]): Promise<void> {
 
   const title = pptx.addSlide();
   title.background = { color: "1A1626" };
-  title.addText("MindGarden 🌱", {
+  title.addText("Noxilith 🌑", {
     x: 0.8,
     y: 2.6,
     w: 11.7,
@@ -157,7 +157,7 @@ export async function exportPptx(notes: Note[]): Promise<void> {
       valign: "top",
     });
   }
-  await pptx.writeFile({ fileName: `mindgarden-${stamp()}.pptx` });
+  await pptx.writeFile({ fileName: `noxilith-${stamp()}.pptx` });
 }
 
 async function fetchFontBase64(path: string): Promise<string> {
@@ -192,7 +192,7 @@ export async function exportPdf(notes: Note[]): Promise<void> {
   doc.setFont("DejaVu", "bold");
   doc.setFontSize(30);
   doc.setTextColor(109, 78, 217);
-  doc.text("MindGarden", W / 2, 120, { align: "center" });
+  doc.text("Noxilith", W / 2, 120, { align: "center" });
   doc.setFont("DejaVu", "normal");
   doc.setFontSize(12);
   doc.setTextColor(120, 120, 130);
@@ -238,7 +238,7 @@ export async function exportPdf(notes: Note[]): Promise<void> {
       y += 5.6;
     }
   }
-  doc.save(`mindgarden-${stamp()}.pdf`);
+  doc.save(`noxilith-${stamp()}.pdf`);
 }
 
 export async function exportDocx(notes: Note[]): Promise<void> {
@@ -251,7 +251,7 @@ export async function exportDocx(notes: Note[]): Promise<void> {
       spacing: { before: 2400, after: 200 },
       children: [
         new TextRun({
-          text: "MindGarden 🌱",
+          text: "Noxilith 🌑",
           bold: true,
           size: 64,
           color: "6D4ED9",
@@ -306,7 +306,7 @@ export async function exportDocx(notes: Note[]): Promise<void> {
     },
   });
   const blob = await Packer.toBlob(doc);
-  download(blob, `mindgarden-${stamp()}.docx`);
+  download(blob, `noxilith-${stamp()}.docx`);
 }
 
 // ── Import ──

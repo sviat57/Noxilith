@@ -1,1 +1,1 @@
-export const APP_NAME = "MindGarden";
+export const APP_NAME = "Noxilith";

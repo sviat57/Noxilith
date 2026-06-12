@@ -133,7 +133,7 @@ export function VaultLayout() {
         <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-border/60 bg-sidebar py-3">
           <Link
             to="/"
-            aria-label="MindGarden"
+            aria-label="Noxilith"
             className="mb-2 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
           >
             <Sprout className="size-5" />

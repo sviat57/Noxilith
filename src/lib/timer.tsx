@@ -20,7 +20,16 @@ export const TIMER_PRESETS: Record<
   long: { label: "Отдых", minutes: 15 },
 };
 
-const TIMER_KEY = "mindgarden.timer.v1";
+const TIMER_KEY = "noxilith.timer.v1";
+if (
+  localStorage.getItem(TIMER_KEY) === null &&
+  localStorage.getItem("mindgarden.timer.v1") !== null
+) {
+  localStorage.setItem(
+    TIMER_KEY,
+    localStorage.getItem("mindgarden.timer.v1") as string,
+  );
+}
 
 interface PersistedTimer {
   mode: TimerMode;

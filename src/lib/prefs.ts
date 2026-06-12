@@ -2,7 +2,16 @@ import { useSyncExternalStore } from "react";
 
 /** UI preferences (theme palette + graph style), persisted in localStorage. */
 
-const KEY = "mindgarden.prefs.v1";
+const KEY = "noxilith.prefs.v1";
+if (
+  localStorage.getItem(KEY) === null &&
+  localStorage.getItem("mindgarden.prefs.v1") !== null
+) {
+  localStorage.setItem(
+    KEY,
+    localStorage.getItem("mindgarden.prefs.v1") as string,
+  );
+}
 
 export interface Prefs {
   palette: string;

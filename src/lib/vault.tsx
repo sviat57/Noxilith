@@ -29,8 +29,20 @@ export interface Task {
   deletedAt?: number | null;
 }
 
-const NOTES_KEY = "mindgarden.notes.v1";
-const TASKS_KEY = "mindgarden.tasks.v1";
+const NOTES_KEY = "noxilith.notes.v1";
+const TASKS_KEY = "noxilith.tasks.v1";
+
+/** One-time migration from the old Noxilith storage keys. */
+function migrateKey(newKey: string): void {
+  const oldKey = newKey.replace(/^noxilith\./, "mindgarden.");
+  if (localStorage.getItem(newKey) === null) {
+    const old = localStorage.getItem(oldKey);
+    if (old !== null) localStorage.setItem(newKey, old);
+  }
+}
+
+migrateKey(NOTES_KEY);
+migrateKey(TASKS_KEY);
 
 export function uid(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
@@ -80,7 +92,7 @@ function seedNotes(): Note[] {
   return [
     mk(
       "Добро пожаловать",
-      `# Добро пожаловать в MindGarden 🌱
+      `# Добро пожаловать в Noxilith 🌑
 
 Это твоё личное пространство для заметок и размышлений — в духе Obsidian.
 
@@ -166,7 +178,7 @@ function loadTasks(): Task[] {
   const seeded: Task[] = [
     {
       id: uid(),
-      text: "Осмотреться в MindGarden",
+      text: "Осмотреться в Noxilith",
       due: toDayKey(Date.now()),
       done: false,
       createdAt: Date.now(),
